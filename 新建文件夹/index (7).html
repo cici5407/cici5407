@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <title>在西西格子间里讲悄悄话</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 300px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* 密码输入弹窗样式 */
+        #passwordModal {
+            display: none;
+            position: fixed;
+            z-index: 2;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        #passwordModal .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 300px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        /* 昵称设置弹窗样式 */
+        #nicknameModal {
+            display: none;
+            position: fixed;
+            z-index: 2;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        #nicknameModal .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 300px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        /* 爱心样式 */
+        .heart {
+            position: fixed;
+            top: -10%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 50px;
+            color: red;
+            animation: fall 2s linear forwards;
+        }
+
+        @keyframes fall {
+            0% {
+                top: -10%;
+            }
+            100% {
+                top: 100%;
+            }
+        }
+
+        /* 二维码样式 */
+        #qrcode {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body class="bg-pink-100">
+    <!-- 头部 -->
+    <header class="bg-pink-200 p-8 text-center">
+        <h1 class="text-4xl font-bold text-pink-600">在西西格子间里讲悄悄话</h1>
+        <p class="text-gray-600 mt-2">熊西西是大王，在这里请放心大声说话</p>
+        <button id="setNicknameButton" class="bg-pink-600 text-white py-2 px-4 rounded-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-opacity-50 mt-4">
+            设置昵称
+        </button>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="p-8 max-w-3xl mx-auto">
+        <!-- 留言输入区 -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-bold text-pink-600 mb-4">留下你的悄悄话</h2>
+            <form id="messageForm">
+                <div class="mb-4">
+                    <label for="message" class="block text-gray-700 font-bold mb-2">你的悄悄话</label>
+                    <textarea id="message" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:border-pink-600" rows="4" placeholder="在这里写下你的心里话..."></textarea>
+                </div>
+                <button type="submit" class="bg-pink-600 text-white py-3 px-6 rounded-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-opacity-50">
+                    <i class="fa-solid fa-paper-plane mr-2"></i>发送
+                </button>
+            </form>
+        </div>
+
+        <!-- 留言展示区 -->
+        <div id="messageDisplayArea" class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold text-pink-600 mb-4">大家的悄悄话</h2>
+            <div id="messageList" class="space-y-4">
+                <div class="border-b border-gray-200 pb-4">
+                    <p class="text-gray-700">今天天气真好，心情也跟着变好了呢。</p>
+                    <p class="text-sm text-gray-500 mt-2">发布者：匿名用户 | 发布于：2025-04-12 10:00</p>
+                </div>
+                <div class="border-b border-gray-200 pb-4">
+                    <p class="text-gray-700">最近工作压力有点大，希望能快点度过难关。</p>
+                    <p class="text-sm text-gray-500 mt-2">发布者：匿名用户 | 发布于：2025-04-12 09:30</p>
+                </div>
+            </div>
+        </div>
+        <button id="exportButton" class="bg-pink-600 text-white py-3 px-6 rounded-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-opacity-50 mt-4">
+            <i class="fa-solid fa-download mr-2"></i>导出留言海报
+        </button>
+    </main>
+
+    <!-- 底部 -->
+    <footer class="bg-pink-200 p-8 text-center text-gray-600 mt-8">
+        <p>&copy; 2025 在西西格子间里讲悄悄话. 保留所有权利.</p>
+        <div id="qrcode"></div>
+    </footer>
+
+    <!-- 留言提交成功提示弹窗 -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p>留言提交成功！</p>
+        </div>
+    </div>
+
+    <!-- 密码输入弹窗 -->
+    <div id="passwordModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 class="text-lg font-bold mb-2">请输入密码</h2>
+            <input type="password" id="passwordInput" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:border-pink-600 mb-4">
+            <button id="verifyPasswordButton" class="bg-pink-600 text-white py-3 px-6 rounded-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-opacity-50">
+                验证
+            </button>
+        </div>
+    </div>
+
+    <!-- 昵称设置弹窗 -->
+    <div id="nicknameModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 class="text-lg font-bold mb-2">设置你的昵称</h2>
+            <input type="text" id="nicknameInput" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:border-pink-600 mb-4">
+            <button id="saveNicknameButton" class="bg-pink-600 text-white py-3 px-6 rounded-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-opacity-50">
+                保存
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 获取表单、弹窗、留言列表元素
+        const messageForm = document.getElementById('messageForm');
+        const modal = document.getElementById('myModal');
+        const closeBtn = document.getElementsByClassName('close');
+        const messageList = document.getElementById('messageList');
+        const exportButton = document.getElementById('exportButton');
+        const messageDisplayArea = document.getElementById('messageDisplayArea');
+        const passwordModal = document.getElementById('passwordModal');
+        const passwordInput = document.getElementById('passwordInput');
+        const verifyPasswordButton = document.getElementById('verifyPasswordButton');
+        const setNicknameButton = document.getElementById('setNicknameButton');
+        const nicknameModal = document.getElementById('nicknameModal');
+        const nicknameInput = document.getElementById('nicknameInput');
+        const saveNicknameButton = document.getElementById('saveNicknameButton');
+
+        // 预设密码，设置为 524711
+        const correctPassword = "524711";
+        let isVerified = false;
+        let userNickname = "匿名用户";
+
+        // 监听表单提交事件
+        messageForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const messageInput = document.getElementById('message');
+            const message = messageInput.value;
+            if (message) {
+                // 创建新留言元素
+                const newMessageDiv = document.createElement('div');
+                newMessageDiv.classList.add('border-b', 'border-gray-200', 'pb-4');
+                const messageText = document.createElement('p');
+                messageText.classList.add('text-gray-700');
+                messageText.textContent = message;
+                const timeText = document.createElement('p');
+                timeText.classList.add('text-sm', 'text-gray-500', 'mt-2');
+                const now = new Date();
+                const timeString = `发布者：${userNickname} | 发布于：${now.toLocaleString()}`;
+                timeText.textContent = timeString;
+                newMessageDiv.appendChild(messageText);
+                newMessageDiv.appendChild(timeText);
+
+                // 将新留言添加到留言列表顶部
+                messageList.prepend(newMessageDiv);
+
+                // 显示弹窗
+                modal.style.display = 'block';
+                // 清空表单内容
+                messageInput.value = '';
+
+                // 判断留言内容是否为“熊西西大王威武”，若是则弹出爱心
+                if (message === "熊西西大王威武") {
+                    const heart = document.createElement('div');
+                    heart.classList.add('heart');
+                    heart.textContent = '💖';
+                    document.body.appendChild(heart);
+                    setTimeout(() => {
+                        heart.remove();
+                    }, 2000);
+                }
+            }
+        });
+
+        // 监听关闭弹窗事件
+        for (let i = 0; i < closeBtn.length; i++) {
+            closeBtn[i].addEventListener('click', function () {
+                if (this.closest('#myModal')) {
+                    modal.style.display = 'none';
+                } else if (this.closest('#passwordModal')) {
+                    passwordModal.style.display = 'none';
+                } else if (this.closest('#nicknameModal')) {
+                    nicknameModal.style.display = 'none';
+                }
+            });
+        }
+
+        // 点击弹窗外部关闭弹窗
+        window.addEventListener('click', function (event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+            if (event.target === passwordModal) {
+                passwordModal.style.display = 'none';
+            }
+            if (event.target === nicknameModal) {
+                nicknameModal.style.display = 'none';
+            }
+        });
+
+        // 点击导出按钮时弹出密码输入框
+        exportButton.addEventListener('click', function () {
+            if (!isVerified) {
+                passwordModal.style.display = 'block';
+            } else {
+                exportMessages();
+            }
+        });
+
+        // 验证密码
+        verifyPasswordButton.addEventListener('click', function () {
+            const inputPassword = passwordInput.value;
+            if (inputPassword === correctPassword) {
+                isVerified = true;
+                passwordModal.style.display = 'none';
+                exportMessages();
+            } else {
+                alert('密码错误，请重新输入。');
+            }
+        });
+
+        // 导出留言海报功能
+        function exportMessages() {
+            html2canvas(messageDisplayArea).then(canvas => {
+                const link = document.createElement('a');
+                link.download = '留言海报.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        // 点击设置昵称按钮弹出昵称设置弹窗
+        setNicknameButton.addEventListener('click', function () {
+            nicknameModal.style.display = 'block';
+        });
+
+        // 保存昵称
+        saveNicknameButton.addEventListener('click', function () {
+            const newNickname = nicknameInput.value;
+            if (newNickname) {
+                userNickname = newNickname;
+                nicknameModal.style.display = 'none';
+            } else {
+                alert('请输入有效的昵称。');
+            }
+        });
+
+        // 生成二维码
+        const qr = qrcode(0, 'L');
+        qr.addData(window.location.href);
+        qr.make();
+        const qrDiv = document.getElementById('qrcode');
+        qrDiv.innerHTML = qr.createImgTag(4);
+    </script>
+</body>
+
+</html>
+    
